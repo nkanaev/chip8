@@ -115,6 +115,10 @@ int c8step(c8vm *vm)
             }
             break;
         case 0x5000:
+            if (vm->cpu[(op & 0x0f00) >> 8] == vm->cpu[(op & 0x00f0) >> 4]) {
+                vm->pc += 4;
+                incPc = 0;
+            }
             break;
         case 0x6000:
             vm->cpu[(op & 0x0f00) >> 8] = op & 0x00ff;
@@ -123,14 +127,54 @@ int c8step(c8vm *vm)
             vm->cpu[(op & 0x0f00) >> 8] += op & 0x00ff;
             break;
         case 0x8000:
-            vm->cpu[(op & 0x0f00) >> 8] = vm->cpu[(op & 0x00f0) >> 4];
+            switch (op & 0x000f) {
+                case 0x0:
+                    vm->cpu[(op & 0x0f00) >> 8] = vm->cpu[(op & 0x00f0) >> 4];
+                    break;
+                case 0x1:
+                    vm->cpu[(op & 0x0f00) >> 8] |= vm->cpu[(op & 0x00f0) >> 4];
+                    break;
+                case 0x2:
+                    vm->cpu[(op & 0x0f00) >> 8] &= vm->cpu[(op & 0x00f0) >> 4];
+                    break;
+                case 0x3:
+                    vm->cpu[(op & 0x0f00) >> 8] ^= vm->cpu[(op & 0x00f0) >> 4];
+                    break;
+                case 0x4:
+                    vm->cpu[(op & 0x0f00) >> 8] += vm->cpu[(op & 0x00f0) >> 4];
+                    // TODO: VF
+                    break;
+                case 0x5:
+                    vm->cpu[(op & 0x0f00) >> 8] -= vm->cpu[(op & 0x00f0) >> 4];
+                    // TODO: VF
+                    break;
+                case 0x6:
+                    vm->cpu[0xf] = vm->cpu[(op & 0x0f00) >> 8] & 1;
+                    vm->cpu[(op & 0x0f00) >> 8] >>= 1;
+                    break;
+                case 0x7: {
+                    uint8_t x = (op & 0x0f00) >> 8;
+                    uint8_t y = (op & 0x00f0) >> 4;
+                    vm->cpu[x] = vm->cpu[y] - vm->cpu[x];
+                    // TODO: VF
+                    break;
+                }
+                case 0xe:
+                    vm->cpu[(op & 0x0f00) >> 8] >>= 1;
+                    break;
+            }
             break;
         case 0x9000:
+            if (vm->cpu[(op & 0x0f00) >> 8] != vm->cpu[(op & 0x00f0) >> 4]) {
+                vm->pc += 4;
+                incPc = 0;
+            }
             break;
         case 0xa000:
             vm->i = op & 0x0fff;
             break;
         case 0xb000:
+            vm->pc = vm->cpu[0] + (op & 0x0fff);
             break;
         case 0xc000:
             vm->cpu[(op & 0x0f00) >> 8] = (rand() % 256) & (op & 0x00ff);
@@ -171,7 +215,7 @@ void c8draw(c8vm *vm, SDL_Surface *surface)
     pixel.w = C8_PIXEL_SIZE;
     pixel.h = C8_PIXEL_SIZE;
 
-    Uint32 colorBg = SDL_MapRGB(surface->format, 0, 0, 0);
+    Uint32 colorBg = SDL_MapRGB(surface->format, 19, 19, 19);
     Uint32 colorFg = SDL_MapRGB(surface->format, 255, 255, 255);
 
     SDL_FillRect(surface, NULL, colorBg);
