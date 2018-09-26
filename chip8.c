@@ -22,6 +22,7 @@ typedef struct c8vm {
     uint8_t timer_sound;
     uint8_t stack[16];
     uint8_t stack_p;
+    uint16_t keyboard;
 } c8vm;
 
 uint8_t fontset[80] = {
@@ -43,15 +44,31 @@ uint8_t fontset[80] = {
   0xf0, 0x80, 0xf0, 0x80, 0x80  // f
 };
 
+/*
+Keyboard Map:
+
+    chip-8      qwerty
+    -------     -------
+    1 2 3 c     1 2 3 4
+    4 5 6 d     q w e r
+    7 8 9 e     a s d f
+    a 0 b f     z x c v
+*/
+uint8_t keymap[16] = {
+    120, 49, 50, 51, 113, 119, 101, 97, 115, 100, 122, 99, 52, 114, 102, 118,
+};
+
 c8vm* c8init()
 {
+    int i;
     c8vm *vm = malloc(sizeof(c8vm));
     vm->pc = 0x200;
     vm->i = 0;
     vm->stack_p = 0;
-    for (int i = 0; i < 80; i++)
+    vm->keyboard = 0;
+    for (i = 0; i < 80; i++)
         vm->mem[i] = fontset[i];
-    for (int i = 0; i < C8_SCREEN_WIDTH * C8_SCREEN_HEIGHT; i++)
+    for (i = 0; i < C8_SCREEN_WIDTH * C8_SCREEN_HEIGHT; i++)
         vm->screen[i] = 0;
     return vm;
 }
@@ -231,6 +248,14 @@ void c8draw(c8vm *vm, SDL_Surface *surface)
     }
 }
 
+int chip8Key(int key)
+{
+    for (int i = 0; i < 16; i++) {
+        if (keymap[i] == key) return i;
+    }
+    return -1;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -255,9 +280,15 @@ int main(int argc, char **argv)
             if (event.type == SDL_QUIT) {
                 quit = 1;
             } else if (event.type == SDL_KEYDOWN) {
-                // TODO: handle event.key.keysym.sym
+                int key = chip8Key(event.key.keysym.sym);
+                if (key != -1) {
+                    vm->keyboard |= 1 << key;
+                }
             } else if (event.type == SDL_KEYUP) {
-                // TODO: handle event.key.keysym.sym
+                int key = chip8Key(event.key.keysym.sym);
+                if (key != -1) {
+                    vm->keyboard &= ~(1 << key);
+                }
             }
         }
         int drawFlag = c8step(vm);
