@@ -20,8 +20,8 @@ typedef struct c8vm {
     uint8_t screen[C8_SCREEN_WIDTH * C8_SCREEN_HEIGHT];
     uint8_t timer_delay;
     uint8_t timer_sound;
-    uint8_t stack[16];
     uint8_t stack_p;
+    uint16_t stack[16];
     uint16_t keyboard;
 } c8vm;
 
@@ -103,8 +103,9 @@ int c8step(c8vm *vm)
                     break;
                 }
                 case 0x00ee:
-                    vm->pc = vm->stack[vm->stack_p];
                     vm->stack_p--;
+                    vm->pc = vm->stack[vm->stack_p];
+                    incPc = 0;
                     break;
             }
             break;
@@ -192,6 +193,7 @@ int c8step(c8vm *vm)
             break;
         case 0xb000:
             vm->pc = vm->cpu[0] + (op & 0x0fff);
+            incPc = 0;
             break;
         case 0xc000:
             vm->cpu[(op & 0x0f00) >> 8] = (rand() % 256) & (op & 0x00ff);
@@ -217,11 +219,57 @@ int c8step(c8vm *vm)
             break;
         }
         case 0xe000:
+            switch (op & 0x00ff) {
+                case 0x009e:
+                    printf("not implemented: ex9e\n");
+                    break;
+                case 0x00a1:
+                    printf("not implemented: exa1\n");
+                    break;
+            }
             break;
         case 0xf000:
+            switch (op & 0x00ff) {
+                case 0x0007:
+                    printf("not implemented: fx07\n");
+                    break;
+                case 0x000a:
+                    printf("not implemented: fx0a\n");
+                    incPc = 0;
+                    break;
+                case 0x0015:
+                    printf("not implemented: fx15\n");
+                    break;
+                case 0x0018:
+                    printf("not implemented: fx18\n");
+                    break;
+                case 0x001e:
+                    vm->i += vm->cpu[(op & 0x0f00) >> 8];
+                    break;
+                case 0x0029:
+                    break;
+                case 0x0033: {
+                    uint8_t x = vm->cpu[(op & 0x0f00) >> 8];
+                    vm->mem[vm->i] = x / 100;
+                    vm->mem[vm->i + 1] = x / 10;
+                    vm->mem[vm->i + 2] = x % 10;
+                    break;
+                }
+                case 0x0055:
+                    for (uint16_t i = 0; i <= ((op & 0x0f00) > 8); i++) {
+                        vm->mem[vm->i + i] = vm->cpu[i];
+                    }
+                    break;
+                case 0x0065:
+                    for (uint16_t i = 0; i <= ((op & 0x0f00) > 8); i++) {
+                        vm->cpu[i] = vm->mem[vm->i + i];
+                    }
+                    break;
+            }
             break;
     }
     if (incPc) vm->pc += 2;
+    printf("%04x %x\n", op, vm->pc);
     return drawFlag;
 }
 
@@ -294,6 +342,7 @@ int main(int argc, char **argv)
         int drawFlag = c8step(vm);
         if (drawFlag) {
             c8draw(vm, surface);
+            sleep(1);
             SDL_UpdateWindowSurface(window);
         }
     }
