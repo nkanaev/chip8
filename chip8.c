@@ -105,8 +105,9 @@ int c8step(c8vm *vm)
                 case 0x00ee:
                     vm->stack_p--;
                     vm->pc = vm->stack[vm->stack_p];
-                    incPc = 0;
                     break;
+                default:
+                    printf("not implemented: rca 180 command");
             }
             break;
         }
@@ -180,7 +181,8 @@ int c8step(c8vm *vm)
                     break;
                 }
                 case 0xe:
-                    vm->cpu[x] >>= 1;
+                    vm->cpu[0xf] = vm->cpu[x] >> 7;
+                    vm->cpu[x] <<= 1;
                     break;
             }
             break;
@@ -237,8 +239,14 @@ int c8step(c8vm *vm)
                     printf("not implemented: fx07\n");
                     break;
                 case 0x000a:
-                    printf("not implemented: fx0a\n");
                     incPc = 0;
+                    for (uint8_t i = 0; i < 16; i++) {
+                        if (vm->keyboard & 1 << i) {
+                            vm->cpu[(op & 0x0f00) >> 8] = i;
+                            incPc = 1;
+                            break;
+                        }
+                    }
                     break;
                 case 0x0015:
                     printf("not implemented: fx15\n");
@@ -250,6 +258,7 @@ int c8step(c8vm *vm)
                     vm->i += vm->cpu[(op & 0x0f00) >> 8];
                     break;
                 case 0x0029:
+                    printf("not implemented: fx29\n");
                     break;
                 case 0x0033: {
                     uint8_t x = vm->cpu[(op & 0x0f00) >> 8];
@@ -272,7 +281,7 @@ int c8step(c8vm *vm)
             break;
     }
     if (incPc) vm->pc += 2;
-    printf("%04x %x\n", op, vm->pc);
+    //printf("%04x %x\n", op, vm->pc);
     return drawFlag;
 }
 
@@ -345,7 +354,6 @@ int main(int argc, char **argv)
         int drawFlag = c8step(vm);
         if (drawFlag) {
             c8draw(vm, surface);
-            sleep(1);
             SDL_UpdateWindowSurface(window);
         }
     }
