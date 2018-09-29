@@ -11,6 +11,7 @@
 #define C8_SCREEN_HEIGHT 32
 #define C8_PIXEL_SIZE 10
 #define C8_MEM_SIZE 4096
+#define C8_OP_PER_SEC 200
 
 typedef struct c8vm {
     uint8_t cpu[16];
@@ -319,13 +320,15 @@ int chip8Key(int key)
 
 int main(int argc, char **argv)
 {
+    uint32_t lastTime = 0, currentTime;
+    int quit = 0;
+
     srand(time(NULL));
     c8vm *vm = c8init();
     if (argc == 2)
         c8load(vm, argv[1]);
 
     SDL_Event event;
-    int quit = 0;
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow(
         "CHIP-8",
@@ -351,10 +354,13 @@ int main(int argc, char **argv)
                 }
             }
         }
-        int drawFlag = c8step(vm);
-        if (drawFlag) {
-            c8draw(vm, surface);
-            SDL_UpdateWindowSurface(window);
+        currentTime = SDL_GetTicks();
+        if (currentTime >= lastTime + 1000 / C8_OP_PER_SEC) {
+            lastTime = currentTime;
+            if (c8step(vm)) {
+                c8draw(vm, surface);
+                SDL_UpdateWindowSurface(window);
+            }
         }
     }
     SDL_DestroyWindow(window);
