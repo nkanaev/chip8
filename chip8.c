@@ -108,7 +108,7 @@ int c8step(c8vm *vm)
                     vm->pc = vm->stack[vm->stack_p];
                     break;
                 default:
-                    printf("not implemented: rca 180 command");
+                    printf("not implemented: rca 180 command\n");
             }
             break;
         }
@@ -259,13 +259,13 @@ int c8step(c8vm *vm)
                     vm->timer_delay = vm->cpu[(op & 0x0f00) >> 8];
                     break;
                 case 0x0018:
-                    printf("not implemented: fx18\n");
+                    vm->timer_sound = vm->cpu[(op & 0x0f00) >> 8];
                     break;
                 case 0x001e:
                     vm->i += vm->cpu[(op & 0x0f00) >> 8];
                     break;
                 case 0x0029:
-                    m->i = vm->cpu[(op & 0x0f00) >> 8] * 5;
+                    vm->i = vm->cpu[(op & 0x0f00) >> 8] * 5;
                     break;
                 case 0x0033: {
                     uint8_t x = vm->cpu[(op & 0x0f00) >> 8];
@@ -289,6 +289,8 @@ int c8step(c8vm *vm)
     }
     if (incPc) vm->pc += 2;
     if (vm->timer_delay > 0) vm->timer_delay--;
+    if (vm->timer_sound > 0) vm->timer_sound--;
+    // TODO: sound
     //printf("%04x %x\n", op, vm->pc);
     return drawFlag;
 }
