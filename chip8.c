@@ -1,4 +1,3 @@
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -169,12 +168,12 @@ int c8step(c8vm *vm)
                 }
                 case 0x5: {
                     vm->cpu[0xf] = (vm->cpu[y] > vm->cpu[x]) ? 0 : 1;
-                    vm->cpu[(op & 0x0f00) >> 8] -= vm->cpu[(op & 0x00f0) >> 4];
+                    vm->cpu[x] -= vm->cpu[y];
                     break;
                 }
                 case 0x6:
                     vm->cpu[0xf] = vm->cpu[(op & 0x0f00) >> 8] & 1;
-                    vm->cpu[(op & 0x0f00) >> 8] >>= 1;
+                    vm->cpu[x] >>= 1;
                     break;
                 case 0x7: {
                     vm->cpu[0xf] = (vm->cpu[x] > vm->cpu[y]) ? 0 : 1;
@@ -291,7 +290,6 @@ int c8step(c8vm *vm)
     if (vm->timer_delay > 0) vm->timer_delay--;
     if (vm->timer_sound > 0) vm->timer_sound--;
     // TODO: sound
-    //printf("%04x %x\n", op, vm->pc);
     return drawFlag;
 }
 
