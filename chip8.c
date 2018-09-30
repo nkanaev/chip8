@@ -227,10 +227,16 @@ int c8step(c8vm *vm)
         case 0xe000:
             switch (op & 0x00ff) {
                 case 0x009e:
-                    printf("not implemented: ex9e\n");
+                    if (vm->keyboard & (1 << vm->cpu[(op & 0x0f00) >> 8])) {
+                        vm->pc += 4;
+                        incPc = 0;
+                    }
                     break;
                 case 0x00a1:
-                    printf("not implemented: exa1\n");
+                    if (!(vm->keyboard & (1 << vm->cpu[(op & 0x0f00) >> 8]))) {
+                        vm->pc += 4;
+                        incPc = 0;
+                    }
                     break;
             }
             break;
