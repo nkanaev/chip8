@@ -243,7 +243,7 @@ int c8step(c8vm *vm)
         case 0xf000:
             switch (op & 0x00ff) {
                 case 0x0007:
-                    printf("not implemented: fx07\n");
+                    vm->cpu[(op & 0x0f00) >> 8] = vm->timer_delay;
                     break;
                 case 0x000a:
                     incPc = 0;
@@ -256,7 +256,7 @@ int c8step(c8vm *vm)
                     }
                     break;
                 case 0x0015:
-                    printf("not implemented: fx15\n");
+                    vm->timer_delay = vm->cpu[(op & 0x0f00) >> 8];
                     break;
                 case 0x0018:
                     printf("not implemented: fx18\n");
@@ -265,12 +265,12 @@ int c8step(c8vm *vm)
                     vm->i += vm->cpu[(op & 0x0f00) >> 8];
                     break;
                 case 0x0029:
-                    printf("not implemented: fx29\n");
+                    m->i = vm->cpu[(op & 0x0f00) >> 8] * 5;
                     break;
                 case 0x0033: {
                     uint8_t x = vm->cpu[(op & 0x0f00) >> 8];
                     vm->mem[vm->i] = x / 100;
-                    vm->mem[vm->i + 1] = x / 10;
+                    vm->mem[vm->i + 1] = x / 10 % 10;
                     vm->mem[vm->i + 2] = x % 10;
                     break;
                 }
@@ -288,6 +288,7 @@ int c8step(c8vm *vm)
             break;
     }
     if (incPc) vm->pc += 2;
+    if (vm->timer_delay > 0) vm->timer_delay--;
     //printf("%04x %x\n", op, vm->pc);
     return drawFlag;
 }
