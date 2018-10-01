@@ -161,25 +161,22 @@ int c8step(c8vm *vm)
                 case 0x3:
                     vm->cpu[x] ^= vm->cpu[y];
                     break;
-                case 0x4: {
+                case 0x4:
                     vm->cpu[0xf] = (vm->cpu[y] > (0xff - vm->cpu[x])) ? 1 : 0;
                     vm->cpu[x] += vm->cpu[y];
                     break;
-                }
-                case 0x5: {
+                case 0x5:
                     vm->cpu[0xf] = (vm->cpu[y] > vm->cpu[x]) ? 0 : 1;
                     vm->cpu[x] -= vm->cpu[y];
                     break;
-                }
                 case 0x6:
                     vm->cpu[0xf] = vm->cpu[(op & 0x0f00) >> 8] & 1;
                     vm->cpu[x] >>= 1;
                     break;
-                case 0x7: {
+                case 0x7:
                     vm->cpu[0xf] = (vm->cpu[x] > vm->cpu[y]) ? 0 : 1;
                     vm->cpu[x] = vm->cpu[y] - vm->cpu[x];
                     break;
-                }
                 case 0xe:
                     vm->cpu[0xf] = vm->cpu[x] >> 7;
                     vm->cpu[x] <<= 1;
@@ -274,12 +271,12 @@ int c8step(c8vm *vm)
                     break;
                 }
                 case 0x0055:
-                    for (uint16_t i = 0; i <= ((op & 0x0f00) > 8); i++) {
+                    for (uint16_t i = 0; i <= ((op & 0x0f00) >> 8); i++) {
                         vm->mem[vm->i + i] = vm->cpu[i];
                     }
                     break;
                 case 0x0065:
-                    for (uint16_t i = 0; i <= ((op & 0x0f00) > 8); i++) {
+                    for (uint16_t i = 0; i <= ((op & 0x0f00) >> 8); i++) {
                         vm->cpu[i] = vm->mem[vm->i + i];
                     }
                     break;
