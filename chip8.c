@@ -12,7 +12,7 @@
 #define C8_MEM_SIZE 4096
 #define C8_OP_PER_SEC 200
 
-typedef struct c8vm {
+typedef struct {
     uint8_t cpu[16];
     uint8_t mem[C8_MEM_SIZE];
     uint16_t i;
@@ -85,7 +85,7 @@ void c8load(c8vm *vm, const char *filename)
     }
 }
 
-int c8step(c8vm *vm)
+uint8_t c8step(c8vm *vm)
 {
     int drawFlag = 0;
     int incPc = 1;
@@ -313,7 +313,7 @@ void c8draw(c8vm *vm, SDL_Surface *surface)
     }
 }
 
-int chip8Key(int key)
+int chip8Key(SDL_Keycode key)
 {
     for (int i = 0; i < 16; i++) {
         if (keymap[i] == key) return i;
