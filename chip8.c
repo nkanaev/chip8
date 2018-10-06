@@ -25,6 +25,11 @@ typedef struct {
     uint16_t keyboard;
 } c8vm;
 
+enum {
+    C8_DRAW_FLAG = 1 << 0,
+    C8_BEEP_FLAG = 1 << 1,
+};
+
 uint8_t fontset[80] = {
   0xf0, 0x90, 0x90, 0x90, 0xf0, // 0
   0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -87,7 +92,7 @@ void c8load(c8vm *vm, const char *filename)
 
 uint8_t c8step(c8vm *vm)
 {
-    int drawFlag = 0;
+    int result = 0;
     int incPc = 1;
     uint16_t op = vm->mem[vm->pc] << 8 | vm->mem[vm->pc + 1];
 
@@ -99,7 +104,7 @@ uint8_t c8step(c8vm *vm)
                     for (i = 0; i < C8_SCREEN_WIDTH * C8_SCREEN_HEIGHT; i++) {
                         vm->screen[i] = 0;
                     }
-                    drawFlag = 1;
+                    result ^= C8_DRAW_FLAG;
                     break;
                 }
                 case 0x00ee:
@@ -217,7 +222,7 @@ uint8_t c8step(c8vm *vm)
                     vm->screen[pos] ^= bit;
                 }
             }
-            drawFlag = 1;
+            result ^= C8_DRAW_FLAG;
             break;
         }
         case 0xe000:
@@ -286,8 +291,9 @@ uint8_t c8step(c8vm *vm)
     if (incPc) vm->pc += 2;
     if (vm->timer_delay > 0) vm->timer_delay--;
     if (vm->timer_sound > 0) vm->timer_sound--;
-    // TODO: sound
-    return drawFlag;
+    if (vm->timer_sound != 0) result ^= C8_BEEP_FLAG;
+
+    return result;
 }
 
 
@@ -361,9 +367,13 @@ int main(int argc, char **argv)
         currentTime = SDL_GetTicks();
         if (currentTime >= lastTime + 1000 / C8_OP_PER_SEC) {
             lastTime = currentTime;
-            if (c8step(vm)) {
+            uint8_t result = c8step(vm);
+            if (result & C8_DRAW_FLAG) {
                 c8draw(vm, surface);
                 SDL_UpdateWindowSurface(window);
+            }
+            if (result & C8_BEEP_FLAG) {
+                // TODO: sound
             }
         }
     }
