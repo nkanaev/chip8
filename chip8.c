@@ -327,19 +327,43 @@ int chip8Key(SDL_Keycode key)
     return -1;
 }
 
+void c8audioCallback(void *userdata, Uint8 *stream, int len)
+{
+    static uint16_t sample_nr = 0;
+    Sint16 *buffer = (Sint16*)stream;
+    int length = len / 2;
+
+    for (int i = 0; i < length; i++, sample_nr++) {
+        double time = (double)sample_nr / (double)44100;
+        float sign = sin(2.0f * M_PI * 90.0f * time) > 0 ? 1 : 0;
+        buffer[i] = (Sint16)(28000 * sign);
+    }
+}
 
 int main(int argc, char **argv)
 {
     uint32_t lastTime = 0, currentTime;
-    int quit = 0;
+    int quit = 0, audioPlaying = 0;
 
     srand(time(NULL));
     c8vm *vm = c8init();
     if (argc == 2)
         c8load(vm, argv[1]);
 
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+
     SDL_Event event;
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_AudioSpec want, have;
+    SDL_AudioDeviceID audioDev;
+    SDL_zero(want);
+    want.freq = 48000;
+    want.format = AUDIO_S16SYS;
+    want.channels = 1;
+    want.samples = 2048;
+    want.callback = c8audioCallback;
+    audioDev = SDL_OpenAudioDevice(
+        NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+
     SDL_Window *window = SDL_CreateWindow(
         "CHIP-8",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -373,10 +397,15 @@ int main(int argc, char **argv)
                 SDL_UpdateWindowSurface(window);
             }
             if (result & C8_BEEP_FLAG) {
-                // TODO: sound
+                if (!audioPlaying) SDL_PauseAudioDevice(audioDev, 0);
+                audioPlaying = 1;
+            } else {
+                if (audioPlaying) SDL_PauseAudioDevice(audioDev, 1);
+                audioPlaying = 0;
             }
         }
     }
+    SDL_CloseAudioDevice(audioDev);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
