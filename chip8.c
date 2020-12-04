@@ -1,8 +1,11 @@
+#include <time.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <SDL2/SDL.h>
 
+#define PI 3.14159
 #define C8_MEM_START 512
 #define C8_SPRITE_WIDTH 8
 #define C8_SPRITE_HEIGHT 15
@@ -335,7 +338,7 @@ void c8audioCallback(void *userdata, Uint8 *stream, int len)
 
     for (int i = 0; i < length; i++, sample_nr++) {
         double time = (double)sample_nr / (double)44100;
-        float sign = sin(2.0f * M_PI * 90.0f * time) > 0 ? 1 : 0;
+        float sign = sinf(2.0f * PI * 90.0f * time) > 0 ? 1 : 0;
         buffer[i] = (Sint16)(28000 * sign);
     }
 }
@@ -347,8 +350,12 @@ int main(int argc, char **argv)
 
     srand(time(NULL));
     c8vm *vm = c8init();
-    if (argc == 2)
-        c8load(vm, argv[1]);
+    if (argc != 2) {
+      printf("usage: %s <romfile>\n", argv[0]);
+      exit(1);
+    }
+
+    c8load(vm, argv[1]);
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
